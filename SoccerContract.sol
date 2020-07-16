@@ -12,13 +12,18 @@ pragma experimental ABIEncoderV2;
        string coach;
        bool exists;
    }
+   
+   struct License{
+       uint256 licenseCode;
+       uint16 daysUntilExpiration;
+   } 
 contract BasicContract{
 
     mapping(uint256 => Team) Teams;
     
     mapping(uint256 => Player) Players;
 
-    mapping(uint256 => uint256) LicenseCodes;
+    mapping(uint256 => License) Licenses;
     
      function addTeam (string memory _name, string memory _coach) public  returns(uint team_code){
         uint code = uint(keccak256(abi.encode(_name ,now)));
@@ -32,6 +37,10 @@ contract BasicContract{
         return code;
      }
      
+     function getLicense(uint256 _player_code) public view returns(License memory){
+         return Licenses[_player_code];
+     }
+     
      
      function addPlayer (Player memory _player, uint256  _team_code) public returns(uint player_code, uint licenseCode) {
         Team storage team = Teams[_team_code];
@@ -39,7 +48,10 @@ contract BasicContract{
         
         uint code = uint(keccak256(abi.encode(_player.name ,now)));
         uint licenseCode= uint(keccak256(abi.encode(_team_code,now)));
-        LicenseCodes[code]=licenseCode;
+        Licenses[code]=License({
+            licenseCode : licenseCode,
+            daysUntilExpiration : 365
+        });
         Players[code] = _player;
         
         return (code,licenseCode);
