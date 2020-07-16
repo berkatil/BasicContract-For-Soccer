@@ -17,12 +17,14 @@ contract BasicContract{
     mapping(uint256 => Team) Teams;
     
     mapping(uint256 => Player) Players;
+
+    mapping(uint256 => uint256) LicenseCodes;
     
      function addTeam (string memory _name, string memory _coach) public  returns(uint team_code){
         uint code = uint(keccak256(abi.encode(_name ,now)));
        
         Teams[code] = Team({
-            name : _name,
+           name : _name,
            coach : _coach,
            exists: true
         });
@@ -31,14 +33,16 @@ contract BasicContract{
      }
      
      
-     function addPlayer (Player memory _player, uint256  _team_code) public returns(uint player_code) {
+     function addPlayer (Player memory _player, uint256  _team_code) public returns(uint player_code, uint licenseCode) {
         Team storage team = Teams[_team_code];
         require(team.exists);
         
         uint code = uint(keccak256(abi.encode(_player.name ,now)));
+        uint licenseCode= uint(keccak256(abi.encode(_team_code,now)));
+        LicenseCodes[code]=licenseCode;
         Players[code] = _player;
         
-        return code;
+        return (code,licenseCode);
      }
      
      function getPlayer (uint256 _code) public view returns(Player memory){
