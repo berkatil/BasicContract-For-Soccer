@@ -7,6 +7,13 @@ pragma experimental ABIEncoderV2;
         string position;
     }
     
+    struct Date{
+    uint8 day;
+    uint8 month;
+    uint16 year;
+    bool valid;
+}
+
    struct Team {
        string name;
        string coach;
@@ -15,8 +22,17 @@ pragma experimental ABIEncoderV2;
    
    struct License{
        uint256 licenseCode;
-       uint16 daysUntilExpiration;
+       Date contractEndDate;
+       uint256 teamCode;
    } 
+   
+   struct TransferInfo{
+       uint32 transferFee;
+       uint256 teamFrom;
+       uint256 teamTo;
+       Date date;
+   }
+   
 contract BasicContract{
 
     mapping(uint256 => Team) Teams;
@@ -24,6 +40,8 @@ contract BasicContract{
     mapping(uint256 => Player) Players;
 
     mapping(uint256 => License) Licenses;
+    
+    mapping(uint256 => TransferInfo[]) Transfers;
     
      function addTeam (string memory _name, string memory _coach) public  returns(uint team_code){
         uint code = uint(keccak256(abi.encode(_name ,now)));
@@ -41,16 +59,18 @@ contract BasicContract{
          return Licenses[_player_code];
      }
      
-     
-     function addPlayer (Player memory _player, uint256  _team_code) public returns(uint player_code, uint licenseCode) {
+     function addPlayer (Player memory _player, uint256  _team_code, Date memory _contract_end_date) public returns(uint player_code, uint licenseCode) {
         Team storage team = Teams[_team_code];
         require(team.exists);
         
         uint code = uint(keccak256(abi.encode(_player.name ,now)));
-        uint licenseCode= uint(keccak256(abi.encode(_team_code,now)));
+        uint createdLicenseCode = uint(keccak256(abi.encode(_team_code,now)));
+        _contract_end_date.valid=true;
+        
         Licenses[code]=License({
-            licenseCode : licenseCode,
-            daysUntilExpiration : 365
+            licenseCode : createdLicenseCode,
+            contractEndDate : _contract_end_date,
+            teamCode : _team_code
         });
         Players[code] = _player;
         
@@ -71,5 +91,39 @@ contract BasicContract{
      function increasePlayerSalary(uint256 _code,uint32 _increaseAmount) public{
           Player storage player=Players[_code];
           player.salary+=_increaseAmount;
+     }
+     
+     function transferPlayer(uint256 _player_code, uint256 _from_team,uint256 _to_team, uint32 _transfer_fee, Date memory _transfer_date,
+     Date memory _new_contract_end_date) public {
+         _transfer_date.valid=true;
+           Transfers[_player_code].push(TransferInfo({
+               transferFee : _transfer_fee,
+               teamFrom : _from_team,
+               teamTo : _to_team,
+               date : _transfer_date
+           })); 
+           
+           License storage license = Licenses[_player_code];
+           license.contractEndDate=_new_contract_end_date;
+           license.teamCode=_to_team;
+     }
+     
+     function releasePlayer(uint256 _player_code) public{
+         License storage license = Licenses[_player_code];
+         license.contractEndDate.valid=false;
+         license.teamCode=0;
+         Player storage player = Players[_player_code];
+         player.salary=0;
+     }
+     
+     function signContract(uint256 _player_code, uint32 _salary, uint256 _to_team,Date memory _new_contract_end_date) public{
+         License storage license = Licenses[_player_code];
+         require(license.teamCode==0);
+         require(!license.contractEndDate.valid);
+         _new_contract_end_date.valid=true;
+         license.contractEndDate=_new_contract_end_date;
+         license.teamCode=_to_team;
+         Player storage player = Players[_player_code];
+         player.salary=_salary;
      }
 }
