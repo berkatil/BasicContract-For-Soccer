@@ -1,34 +1,35 @@
 pragma solidity ^0.6.11;
 pragma experimental ABIEncoderV2;
+// _cr - code formatting is missing
 
   struct Player{
-        string name;
-        uint32 salary;
-        string position;
+        string name; // _cr - surname is missing
+        uint32 salary; // _cr - if there is a salary, please put a currency info as well, two digit
+        string position; // _cr - position is not neccessary here
     }
-    
+    // _cr - please define how you will use the Date struct?? 
     struct Date{
     uint8 day;
     uint8 month;
     uint16 year;
-    bool valid;
+    bool valid; // _cr - why this is required?
 }
-
+   // _cr - A Team is much more than that this information. Could be another contract but leave it as it is
    struct Team {
        string name;
        string coach;
-       bool exists;
+       bool exists; // _cr - not needed
    }
    
    struct License{
        uint256 licenseCode;
        Date contractEndDate;
-       uint256 teamCode;
+       uint256 teamCode; // _cr - code should be name or id in Team list
    } 
    
    struct TransferInfo{
-       uint32 transferFee;
-       uint256 teamFrom;
+       uint32 transferFee; // _cr - change the name to "fee" only
+       uint256 teamFrom; // _cr - fromTeam, and toTeam
        uint256 teamTo;
        Date date;
    }
