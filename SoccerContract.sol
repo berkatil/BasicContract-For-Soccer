@@ -2,9 +2,10 @@ pragma solidity ^0.6.11;
 pragma experimental ABIEncoderV2;
 
   struct Player{
-        string name;
+        string firstName;
+        string lastName;
         uint32 salary;
-        string position;
+        string salaryCurrency;
     }
     
     struct Date{
@@ -27,9 +28,9 @@ pragma experimental ABIEncoderV2;
    } 
    
    struct TransferInfo{
-       uint32 transferFee;
-       uint256 teamFrom;
-       uint256 teamTo;
+       uint32 fee;
+       uint256 fromTeam;
+       uint256 toTeam;
        Date date;
    }
    
@@ -63,7 +64,7 @@ contract BasicContract{
         Team storage team = Teams[_team_code];
         require(team.exists);
         
-        uint code = uint(keccak256(abi.encode(_player.name ,now)));
+        uint code = uint(keccak256(abi.encode(_player.firstName ,now)));
         uint createdLicenseCode = uint(keccak256(abi.encode(_team_code,now)));
         _contract_end_date.valid=true;
         
@@ -97,9 +98,9 @@ contract BasicContract{
      Date memory _new_contract_end_date) public {
          _transfer_date.valid=true;
            Transfers[_player_code].push(TransferInfo({
-               transferFee : _transfer_fee,
-               teamFrom : _from_team,
-               teamTo : _to_team,
+               fee : _transfer_fee,
+               fromTeam : _from_team,
+               toTeam : _to_team,
                date : _transfer_date
            })); 
            
