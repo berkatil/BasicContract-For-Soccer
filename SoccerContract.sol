@@ -1,5 +1,6 @@
-pragma solidity ^0.6.11;
+pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/utils/EnumerableSet.sol";
 
   struct Player{
         string firstName;
@@ -22,9 +23,7 @@ pragma experimental ABIEncoderV2;
    }
    
    struct License{
-       uint256 licenseCode;
        Date contractEndDate;
-       uint256 teamCode;
    } 
    
    struct TransferInfo{
@@ -35,16 +34,30 @@ pragma experimental ABIEncoderV2;
    }
    
 contract BasicContract{
-
+    
+using EnumerableSet for EnumerableSet.UintSet;
     mapping(uint256 => Team) Teams;
     
     mapping(uint256 => Player) Players;
 
-    mapping(uint256 => License) Licenses;
+    mapping(uint256 => License) Licenses; // license code=< license struct
+    
+    mapping(uint256 => EnumerableSet.UintSet) TeamLicences; // teamcode => set of licences
     
     mapping(uint256 => TransferInfo[]) Transfers;
     
-     function addTeam (string memory _name, string memory _coach) public  returns(uint team_code){
+    event TeamAddition(
+        address indexed _from,
+        string indexed _name,
+        uint _code
+    );
+    event PlayerAddition(
+      address indexed _from,
+      uint _licenseCode,
+      uint _playerCode
+    );    
+    
+     function addTeam (string memory _name, string memory _coach) public {
         uint code = uint(keccak256(abi.encode(_name ,now)));
        
         Teams[code] = Team({
@@ -53,14 +66,14 @@ contract BasicContract{
            exists: true
         });
         
-        return code;
+        emit TeamAddition(msg.sender,_name,code);
      }
      
-     function getLicense(uint256 _player_code) public view returns(License memory){
-         return Licenses[_player_code];
+    function getLicense(uint256 _license_code) public view returns(License memory){
+         return Licenses[_license_code];
      }
      
-     function addPlayer (Player memory _player, uint256  _team_code, Date memory _contract_end_date) public returns(uint player_code, uint licenseCode) {
+     function addPlayer (Player memory _player, uint256  _team_code, Date memory _contract_end_date) public {
         Team storage team = Teams[_team_code];
         require(team.exists);
         
@@ -68,14 +81,15 @@ contract BasicContract{
         uint createdLicenseCode = uint(keccak256(abi.encode(_team_code,now)));
         _contract_end_date.valid=true;
         
-        Licenses[code]=License({
-            licenseCode : createdLicenseCode,
-            contractEndDate : _contract_end_date,
-            teamCode : _team_code
+        License memory player_license =License({
+            contractEndDate : _contract_end_date
         });
+        Licenses[createdLicenseCode]=player_license;
+        TeamLicences[_team_code].add(createdLicenseCode);
         Players[code] = _player;
         
-        return (code,licenseCode);
+        emit PlayerAddition(msg.sender,createdLicenseCode,code);
+    
      }
      
      function getPlayer (uint256 _code) public view returns(Player memory){
@@ -95,7 +109,7 @@ contract BasicContract{
      }
      
      function transferPlayer(uint256 _player_code, uint256 _from_team,uint256 _to_team, uint32 _transfer_fee, Date memory _transfer_date,
-     Date memory _new_contract_end_date) public {
+     Date memory _new_contract_end_date, uint _license_code) public {
          _transfer_date.valid=true;
            Transfers[_player_code].push(TransferInfo({
                fee : _transfer_fee,
@@ -103,28 +117,29 @@ contract BasicContract{
                toTeam : _to_team,
                date : _transfer_date
            })); 
-           
-           License storage license = Licenses[_player_code];
-           license.contractEndDate=_new_contract_end_date;
-           license.teamCode=_to_team;
+          
+         License storage license = Licenses[_license_code];
+         license.contractEndDate=_new_contract_end_date;
+         
+           TeamLicences[_from_team].remove(_license_code);
+           TeamLicences[_to_team].add(_license_code);
      }
      
-     function releasePlayer(uint256 _player_code) public{
-         License storage license = Licenses[_player_code];
+     function releasePlayer(uint256 _team_code,uint256 _player_code,uint256 _license_code) public{
+         License storage license = Licenses[_license_code];
          license.contractEndDate.valid=false;
-         license.teamCode=0;
          Player storage player = Players[_player_code];
          player.salary=0;
+         TeamLicences[_team_code].remove(_license_code);
      }
      
-     function signContract(uint256 _player_code, uint32 _salary, uint256 _to_team,Date memory _new_contract_end_date) public{
-         License storage license = Licenses[_player_code];
-         require(license.teamCode==0);
+     function signContract(uint256 _license_code,uint256 _player_code, uint32 _salary, uint256 _to_team,Date memory _new_contract_end_date) public{
+         License storage license = Licenses[_license_code];
          require(!license.contractEndDate.valid);
          _new_contract_end_date.valid=true;
          license.contractEndDate=_new_contract_end_date;
-         license.teamCode=_to_team;
          Player storage player = Players[_player_code];
          player.salary=_salary;
+         TeamLicences[_to_team].add(_license_code);
      }
 }
