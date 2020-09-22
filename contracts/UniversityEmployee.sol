@@ -1,7 +1,6 @@
 pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
-
 struct Date{
     uint8 day;
     uint8 month;
@@ -14,12 +13,8 @@ struct Date{
     Date startDate;
     address owner;
     
-    modifier onlyOwner() {
-        require(owner == msg.sender);
-        _;
-    }
-    
-    function getAge () external onlyOwner view returns(uint8){
+    function getAge () public view returns(uint8){
+         require(msg.sender==owner);
          return age;
     }
     
@@ -30,7 +25,7 @@ struct Date{
     function getStartDate () public view returns(Date memory) {
         return startDate;
     }
-    function getSalary() external virtual view returns (uint16);
+    function getSalary() public virtual view returns (uint16);
     
 }
 
@@ -51,7 +46,8 @@ contract Researcher is Person{
         numberOfPublications=_numberOfPublications;
     }
     
-     function getSalary() external onlyOwner virtual override view returns (uint16){
+     function getSalary() public virtual override view returns (uint16){
+         require(msg.sender==owner);
          return researchSalary;
      }
     
@@ -63,11 +59,13 @@ contract Researcher is Person{
          return researchArea;
      }
      
-     function increaseResearchSalary(uint16 increaseAmount) external onlyOwner{
+     function increaseResearchSalary(uint16 increaseAmount) public{
+         require(msg.sender==owner);
          researchSalary+=increaseAmount;
      }
      
-     function addPublication() external onlyOwner {
+     function addPublication() public {
+         require(msg.sender==owner);
          numberOfPublications+=1;
      }
     
@@ -90,21 +88,24 @@ contract Teacher is Person{
         numberOfStudents=_numberOfStudents;
     }
     
-    function changeCourse(string memory newCourseName,uint16 newNumberOfStudents) external onlyOwner{
+    function changeCourse(string memory newCourseName,uint16 newNumberOfStudents) public{
+        require(msg.sender==owner);
         givenCourseName=newCourseName;
         numberOfStudents=newNumberOfStudents;
     }
     
-     function increaseTeachingSalary(uint16 increaseAmount) external onlyOwner{
+     function increaseTeachingSalary(uint16 increaseAmount) public{
+         require(msg.sender==owner);
          teachingSalary+=increaseAmount;
      }
     
-    function getSalary() external onlyOwner virtual override view returns (uint16){
+    function getSalary() public virtual override view returns (uint16){
          require(msg.sender==owner);
          return teachingSalary;
      }
      
-      function getTotalNumberOfStudentsInTheCourse() external onlyOwner view returns (uint16){
+      function getTotalNumberOfStudentsInTheCourse() public view returns (uint16){
+         require(msg.sender==owner);
          return numberOfStudents;
      }
      
@@ -125,7 +126,8 @@ contract Academician is Teacher,Researcher{
        title=_title;
     }
     
-    function getSalary() external onlyOwner override(Teacher,Researcher) view returns (uint16){
+    function getSalary() public override(Teacher,Researcher) view returns (uint16){
+         require(msg.sender==owner);
          return teachingSalary + researchSalary;
      }
      

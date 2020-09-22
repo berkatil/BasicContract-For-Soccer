@@ -1,6 +1,6 @@
 pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
   struct Player{
         string firstName;
@@ -33,7 +33,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/utils/E
        Date date;
    }
    
-contract BasicContract{
+contract SoccerContract{
     
 using EnumerableSet for EnumerableSet.UintSet;
     mapping(uint256 => Team) Teams;
